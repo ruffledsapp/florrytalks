@@ -33,6 +33,18 @@ const Index = () => {
     try {
       console.log('Initiating search with query:', query);
       
+      // First, get the current user's session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('Session error:', sessionError);
+        throw new Error('Authentication required to perform searches');
+      }
+
+      if (!session?.user?.id) {
+        throw new Error('Please log in to perform searches');
+      }
+
       const { data: response, error: functionError } = await supabase.functions.invoke('search', {
         body: { query }
       });
@@ -50,12 +62,13 @@ const Index = () => {
       const formattedResults = response.choices[0].message.content;
       console.log('Received formatted results:', formattedResults);
 
-      // Log the search
+      // Log the search with user_id
       const { error: insertError } = await supabase
         .from('search_logs')
         .insert({
           query,
           perplexity_results: response,
+          user_id: session.user.id // Include the user_id in the insert
         });
 
       if (insertError) {
