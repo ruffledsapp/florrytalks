@@ -7,6 +7,7 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -17,24 +18,13 @@ serve(async (req) => {
     
     console.log('Processing search query:', query);
 
-    // First, check if we have a cached result
-    const { data: cachedResults } = await supabase
-      .from('search_logs')
-      .select('perplexity_results')
-      .eq('query', query)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (cachedResults?.perplexity_results) {
-      console.log('Returning cached results for query:', query);
-      return new Response(JSON.stringify(cachedResults.perplexity_results), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    if (!perplexityKey) {
+      console.error('Missing Perplexity API key');
+      throw new Error('Configuration error: Missing API key');
     }
 
-    // If no cache, call Perplexity API
-    console.log('Calling Perplexity API for query:', query);
+    // Call Perplexity API
+    console.log('Calling Perplexity API...');
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
       headers: {
@@ -46,7 +36,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'Return structured search results in a clear, concise format.'
+            content: 'Return structured search results in a clear format. Each result should have a title and detailed content.'
           },
           {
             role: 'user',
@@ -57,6 +47,11 @@ serve(async (req) => {
       }),
     });
 
+    if (!response.ok) {
+      console.error('Perplexity API error:', response.status, response.statusText);
+      throw new Error(`Perplexity API error: ${response.statusText}`);
+    }
+
     const data = await response.json();
     console.log('Received response from Perplexity API');
 
@@ -65,9 +60,14 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error('Search function error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ 
+        error: error.message,
+        details: error.stack
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
   }
 });

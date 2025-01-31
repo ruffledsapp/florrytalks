@@ -21,8 +21,11 @@ const SearchResults = ({ results, isLoading, onResultSelect }: SearchResultsProp
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-8">
         {[...Array(6)].map((_, i) => (
-          <div
+          <motion.div
             key={i}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.1 }}
             className="bg-secondary/50 rounded-lg p-6 h-48 animate-pulse"
           />
         ))}
@@ -37,18 +40,23 @@ const SearchResults = ({ results, isLoading, onResultSelect }: SearchResultsProp
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {results.map((result, index) => (
           <motion.div
             key={index}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ delay: index * 0.1 }}
+            transition={{ 
+              delay: index * 0.1,
+              duration: 0.3,
+              ease: "easeOut"
+            }}
             className="group"
+            layout
           >
             <Card 
-              className={`cursor-pointer transition-all duration-300 hover:shadow-lg ${
+              className={`cursor-pointer transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1 ${
                 expandedIndex === index ? 'ring-2 ring-primary' : ''
               }`}
               onClick={() => {
@@ -72,19 +80,26 @@ const SearchResults = ({ results, isLoading, onResultSelect }: SearchResultsProp
                 </motion.div>
               </CardHeader>
               <CardContent>
-                <AnimatePresence>
+                <AnimatePresence mode="wait">
                   {expandedIndex === index ? (
                     <motion.div
+                      key="expanded"
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
+                      transition={{ duration: 0.3 }}
                       className="text-muted-foreground"
                     >
                       {result.content}
                     </motion.div>
                   ) : (
-                    <motion.div className="line-clamp-2 text-muted-foreground">
+                    <motion.div 
+                      key="collapsed"
+                      initial={{ opacity: 1 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="line-clamp-2 text-muted-foreground"
+                    >
                       {result.content}
                     </motion.div>
                   )}
