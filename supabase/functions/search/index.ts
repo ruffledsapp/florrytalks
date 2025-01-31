@@ -12,14 +12,18 @@ serve(async (req) => {
   }
 
   try {
-    const { query } = await req.json();
+    const { query, user_id } = await req.json();
     const perplexityKey = Deno.env.get('PERPLEXITY_API_KEY');
     
-    console.log('Processing search query:', query);
+    console.log('Processing search query:', query, 'for user:', user_id);
 
     if (!perplexityKey) {
       console.error('Missing Perplexity API key');
       throw new Error('Configuration error: Missing API key');
+    }
+
+    if (!user_id) {
+      throw new Error('User ID is required for search operations');
     }
 
     console.log('Calling Perplexity API...');
@@ -56,12 +60,10 @@ serve(async (req) => {
     const data = await response.json();
     console.log('Raw API response:', data);
 
-    // Enhanced validation and processing
     if (!data.choices?.[0]?.message?.content) {
       throw new Error('Invalid response format from Perplexity API');
     }
 
-    // Process and validate each result
     const results = data.choices[0].message.content
       .split('\n\n')
       .map(block => {

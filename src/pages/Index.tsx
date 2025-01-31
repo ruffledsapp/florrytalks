@@ -6,11 +6,8 @@ import SearchResults from "@/components/SearchResults";
 import ChatWindow from "@/components/ChatWindow";
 import { supabase } from "@/integrations/supabase/client";
 import LoadingIndicator from "@/components/LoadingIndicator";
-
-interface SearchResult {
-  title: string;
-  content: string;
-}
+import { processSearchResults, validateQuery } from "@/utils/searchUtils";
+import type { SearchResult } from "@/types/search";
 
 const Index = () => {
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -20,8 +17,10 @@ const Index = () => {
   const [lastQuery, setLastQuery] = useState<string>("");
 
   const handleSearch = async (query: string) => {
-    if (query.trim() === lastQuery.trim()) {
-      toast.info("You've already searched for this query");
+    // Validate query
+    const validationError = validateQuery(query, lastQuery);
+    if (validationError) {
+      toast.info(validationError);
       return;
     }
 
@@ -33,20 +32,17 @@ const Index = () => {
     try {
       console.log('Initiating search with query:', query);
       
-      // First, get the current user's session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       
-      if (sessionError) {
-        console.error('Session error:', sessionError);
+      if (!session?.user?.id) {
         throw new Error('Authentication required to perform searches');
       }
 
-      if (!session?.user?.id) {
-        throw new Error('Please log in to perform searches');
-      }
-
       const { data: response, error: functionError } = await supabase.functions.invoke('search', {
-        body: { query }
+        body: { 
+          query,
+          user_id: session.user.id // Explicitly include user_id
+        }
       });
 
       if (functionError) {
@@ -54,13 +50,8 @@ const Index = () => {
         throw new Error(functionError.message);
       }
 
-      if (!response?.choices?.[0]?.message?.content) {
-        throw new Error('Invalid response format from search function');
-      }
-
-      // The content is now an array of pre-validated results
-      const formattedResults = response.choices[0].message.content;
-      console.log('Received formatted results:', formattedResults);
+      const processedResults = processSearchResults(response);
+      console.log('Processed results:', processedResults);
 
       // Log the search with user_id
       const { error: insertError } = await supabase
@@ -68,7 +59,7 @@ const Index = () => {
         .insert({
           query,
           perplexity_results: response,
-          user_id: session.user.id // Include the user_id in the insert
+          user_id: session.user.id
         });
 
       if (insertError) {
@@ -76,12 +67,12 @@ const Index = () => {
         toast.error('Failed to save search history');
       }
 
-      setResults(formattedResults);
+      setResults(processedResults);
       
-      if (formattedResults.length === 0) {
+      if (processedResults.length === 0) {
         toast.warning('No results found. Try rephrasing your search query.');
       } else {
-        toast.success(`Found ${formattedResults.length} relevant results`);
+        toast.success(`Found ${processedResults.length} relevant results`);
       }
     } catch (error) {
       console.error('Search error:', error);
