@@ -8,8 +8,10 @@ import { supabase } from "@/integrations/supabase/client";
 import LoadingIndicator from "@/components/LoadingIndicator";
 import { processSearchResults, validateQuery } from "@/utils/searchUtils";
 import type { SearchResult } from "@/types/search";
+import { useAuth } from "@/components/AuthProvider";
 
 const Index = () => {
+  const { session, isLoading: authLoading } = useAuth();
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedResult, setSelectedResult] = useState<SearchResult | null>(null);
@@ -17,7 +19,11 @@ const Index = () => {
   const [lastQuery, setLastQuery] = useState<string>("");
 
   const handleSearch = async (query: string) => {
-    // Validate query
+    if (!session?.user) {
+      toast.error("Please sign in to search");
+      return;
+    }
+
     const validationError = validateQuery(query, lastQuery);
     if (validationError) {
       toast.info(validationError);
@@ -32,16 +38,10 @@ const Index = () => {
     try {
       console.log('Initiating search with query:', query);
       
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session?.user?.id) {
-        throw new Error('Authentication required to perform searches');
-      }
-
       const { data: response, error: functionError } = await supabase.functions.invoke('search', {
         body: { 
           query,
-          user_id: session.user.id // Explicitly include user_id
+          user_id: session.user.id
         }
       });
 
@@ -87,6 +87,30 @@ const Index = () => {
     setSelectedResult(result);
     console.log('Selected result:', result);
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingIndicator />
+      </div>
+    );
+  }
+
+  if (!session) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Please Sign In</h1>
+          <button
+            onClick={() => supabase.auth.signIn({ provider: 'google' })}
+            className="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            Sign In
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-secondary/20">
