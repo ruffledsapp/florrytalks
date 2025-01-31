@@ -23,7 +23,7 @@ serve(async (req) => {
       throw new Error('Configuration error: Missing API key');
     }
 
-    // Call Perplexity API
+    // Call Perplexity API with better error handling
     console.log('Calling Perplexity API...');
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
@@ -36,7 +36,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'Return structured search results in a clear format. Each result should have a title and detailed content.'
+            content: 'You are a helpful assistant. Return search results in a clear format with distinct titles and detailed content. Format each result as "Title: Content" on a new line.'
           },
           {
             role: 'user',
@@ -49,11 +49,18 @@ serve(async (req) => {
 
     if (!response.ok) {
       console.error('Perplexity API error:', response.status, response.statusText);
-      throw new Error(`Perplexity API error: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('Error details:', errorText);
+      throw new Error(`Perplexity API error: ${response.statusText || 'Unknown error'}`);
     }
 
     const data = await response.json();
-    console.log('Received response from Perplexity API');
+    console.log('Received response from Perplexity API:', data);
+
+    // Validate the response structure
+    if (!data.choices?.[0]?.message?.content) {
+      throw new Error('Invalid response format from Perplexity API');
+    }
 
     return new Response(JSON.stringify(data), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -21,51 +21,63 @@ const Index = () => {
   const handleSearch = async (query: string) => {
     setIsLoading(true);
     setError(null);
+    setResults([]); // Clear previous results
     
     try {
       console.log('Initiating search with query:', query);
       
-      const { data, error: functionError } = await supabase.functions.invoke('search', {
+      const { data: response, error: functionError } = await supabase.functions.invoke('search', {
         body: { query }
       });
 
       if (functionError) {
         console.error('Search function error:', functionError);
-        throw functionError;
+        throw new Error(functionError.message);
       }
+
+      if (!response?.choices?.[0]?.message?.content) {
+        throw new Error('Invalid response format from search function');
+      }
+
+      // Parse and format the results more carefully
+      const formattedResults = response.choices[0].message.content
+        .split('\n')
+        .filter(line => line.includes(':')) // Only process lines with the correct format
+        .map((result: string) => {
+          const colonIndex = result.indexOf(':');
+          return {
+            title: result.substring(0, colonIndex).trim(),
+            content: result.substring(colonIndex + 1).trim()
+          };
+        })
+        .filter(result => result.title && result.content); // Ensure both title and content exist
+
+      console.log('Formatted search results:', formattedResults);
 
       // Log the search in our database
       const { error: insertError } = await supabase
         .from('search_logs')
         .insert({
           query,
-          perplexity_results: data,
+          perplexity_results: response,
         });
 
       if (insertError) {
         console.error('Search log insertion error:', insertError);
-        // Don't throw here, just log the error as it's not critical for the user
         toast.error('Failed to save search history');
       }
 
-      console.log('Search results received:', data);
-
-      // Parse and format the results
-      const formattedResults = data.choices[0].message.content
-        .split('\n')
-        .filter(Boolean)
-        .map((result: string) => ({
-          title: result.substring(0, result.indexOf(':')),
-          content: result.substring(result.indexOf(':') + 1).trim()
-        }));
-
       setResults(formattedResults);
-      toast.success('Search completed successfully');
+      
+      if (formattedResults.length === 0) {
+        toast.warning('No results found. Try a different search query.');
+      } else {
+        toast.success(`Found ${formattedResults.length} results`);
+      }
     } catch (error) {
       console.error('Search error:', error);
-      setError('Failed to complete search. Please try again.');
+      setError(error.message || 'Failed to complete search. Please try again.');
       toast.error('Search failed. Please try again.');
-      setResults([]);
     } finally {
       setIsLoading(false);
     }
