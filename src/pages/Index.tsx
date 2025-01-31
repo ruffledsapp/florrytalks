@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 import SearchBar from "@/components/SearchBar";
 import SearchResults from "@/components/SearchResults";
 import ChatWindow from "@/components/ChatWindow";
@@ -18,12 +19,24 @@ const Index = () => {
   const handleSearch = async (query: string) => {
     setIsLoading(true);
     try {
+      console.log('Initiating search with query:', query);
+      
       // Call our Supabase Edge Function
       const { data, error } = await supabase.functions.invoke('search', {
         body: { query }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Search function error:', error);
+        throw error;
+      }
+
+      // Get current user
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) {
+        console.error('User fetch error:', userError);
+        throw userError;
+      }
 
       // Log the search in our database
       const { error: insertError } = await supabase
@@ -31,10 +44,15 @@ const Index = () => {
         .insert({
           query,
           perplexity_results: data,
-          user_id: (await supabase.auth.getUser()).data.user?.id
+          user_id: userData.user?.id
         });
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('Search log insertion error:', insertError);
+        throw insertError;
+      }
+
+      console.log('Search results received:', data);
 
       // Parse and format the results
       const formattedResults = data.choices[0].message.content
@@ -46,8 +64,11 @@ const Index = () => {
         }));
 
       setResults(formattedResults);
+      toast.success('Search completed successfully');
     } catch (error) {
       console.error('Search error:', error);
+      toast.error('Failed to complete search. Please try again.');
+      setResults([]);
     } finally {
       setIsLoading(false);
     }
