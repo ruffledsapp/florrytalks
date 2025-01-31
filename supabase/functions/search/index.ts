@@ -23,7 +23,6 @@ serve(async (req) => {
       throw new Error('Configuration error: Missing API key');
     }
 
-    // Call Perplexity API with better error handling
     console.log('Calling Perplexity API...');
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
@@ -36,7 +35,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are a helpful assistant. Return search results in a clear format with distinct titles and detailed content. Format each result as "Title: Content" on a new line.'
+            content: 'You are a helpful assistant. Return search results in a clear format. Each result should follow this exact format: "Title: Content". Start each result on a new line. Keep titles concise and content informative.'
           },
           {
             role: 'user',
@@ -44,6 +43,7 @@ serve(async (req) => {
           }
         ],
         max_tokens: 1000,
+        temperature: 0.7, // Slightly increased for more creative responses
       }),
     });
 
@@ -55,14 +55,33 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    console.log('Received response from Perplexity API:', data);
+    console.log('Raw API response:', data);
 
-    // Validate the response structure
+    // Validate and clean the response
     if (!data.choices?.[0]?.message?.content) {
       throw new Error('Invalid response format from Perplexity API');
     }
 
-    return new Response(JSON.stringify(data), {
+    // Pre-process the results to ensure consistent formatting
+    const cleanedContent = data.choices[0].message.content
+      .split('\n')
+      .filter(line => line.includes(':'))
+      .join('\n');
+
+    const processedData = {
+      ...data,
+      choices: [{
+        ...data.choices[0],
+        message: {
+          ...data.choices[0].message,
+          content: cleanedContent
+        }
+      }]
+    };
+
+    console.log('Processed response:', processedData);
+
+    return new Response(JSON.stringify(processedData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {

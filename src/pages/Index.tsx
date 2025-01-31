@@ -17,11 +17,18 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedResult, setSelectedResult] = useState<SearchResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [lastQuery, setLastQuery] = useState<string>("");
 
   const handleSearch = async (query: string) => {
+    if (query.trim() === lastQuery.trim()) {
+      toast.info("You've already searched for this query");
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
-    setResults([]); // Clear previous results
+    setResults([]);
+    setLastQuery(query.trim());
     
     try {
       console.log('Initiating search with query:', query);
@@ -39,18 +46,24 @@ const Index = () => {
         throw new Error('Invalid response format from search function');
       }
 
-      // Parse and format the results more carefully
+      // Parse and format the results with validation
       const formattedResults = response.choices[0].message.content
         .split('\n')
-        .filter(line => line.includes(':')) // Only process lines with the correct format
+        .filter(line => line.includes(':'))
         .map((result: string) => {
           const colonIndex = result.indexOf(':');
-          return {
-            title: result.substring(0, colonIndex).trim(),
-            content: result.substring(colonIndex + 1).trim()
-          };
+          const title = result.substring(0, colonIndex).trim();
+          const content = result.substring(colonIndex + 1).trim();
+          
+          // Additional validation
+          if (!title || !content || title.length < 2 || content.length < 5) {
+            console.warn('Skipping invalid result:', { title, content });
+            return null;
+          }
+          
+          return { title, content };
         })
-        .filter(result => result.title && result.content); // Ensure both title and content exist
+        .filter((result): result is SearchResult => result !== null);
 
       console.log('Formatted search results:', formattedResults);
 
@@ -70,9 +83,9 @@ const Index = () => {
       setResults(formattedResults);
       
       if (formattedResults.length === 0) {
-        toast.warning('No results found. Try a different search query.');
+        toast.warning('No results found. Try rephrasing your search query.');
       } else {
-        toast.success(`Found ${formattedResults.length} results`);
+        toast.success(`Found ${formattedResults.length} relevant results`);
       }
     } catch (error) {
       console.error('Search error:', error);
