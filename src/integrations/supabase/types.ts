@@ -9,7 +9,33 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      search_logs: {
+        Row: {
+          created_at: string | null
+          gemini_response: string | null
+          id: string
+          perplexity_results: Json | null
+          query: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          gemini_response?: string | null
+          id?: string
+          perplexity_results?: Json | null
+          query: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          gemini_response?: string | null
+          id?: string
+          perplexity_results?: Json | null
+          query?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

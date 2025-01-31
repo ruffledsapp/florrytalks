@@ -4,6 +4,7 @@ import SearchBar from "@/components/SearchBar";
 import SearchResults from "@/components/SearchResults";
 import ChatWindow from "@/components/ChatWindow";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 
 interface SearchResult {
   title: string;
@@ -25,10 +26,15 @@ const Index = () => {
       if (error) throw error;
 
       // Log the search in our database
-      await supabase.from('search_logs').insert({
-        query,
-        perplexity_results: data
-      });
+      const { error: insertError } = await supabase
+        .from('search_logs')
+        .insert({
+          query,
+          perplexity_results: data,
+          user_id: (await supabase.auth.getUser()).data.user?.id
+        });
+
+      if (insertError) throw insertError;
 
       // Parse and format the results
       const formattedResults = data.choices[0].message.content
