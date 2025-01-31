@@ -3,13 +3,18 @@ import { motion, AnimatePresence } from "framer-motion";
 import { MessageSquare, X, Send } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import { SearchResult } from "@/types/search";
 
 interface Message {
   content: string;
   isAi: boolean;
 }
 
-const ChatWindow = () => {
+interface ChatWindowProps {
+  selectedResult?: SearchResult | null;
+}
+
+const ChatWindow = ({ selectedResult }: ChatWindowProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -25,16 +30,27 @@ const ChatWindow = () => {
     setIsLoading(true);
 
     try {
+      console.log('Sending chat message with context:', {
+        message: input,
+        selectedResult
+      });
+      
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: input }),
+        body: JSON.stringify({ 
+          message: input,
+          context: selectedResult ? {
+            title: selectedResult.title,
+            content: selectedResult.content
+          } : null
+        }),
       });
       const data = await response.json();
       
       setMessages((prev) => [...prev, { content: data.response, isAi: true }]);
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Chat error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -61,6 +77,12 @@ const ChatWindow = () => {
               </Button>
             </div>
             <div className="h-96 overflow-y-auto p-4 space-y-4">
+              {selectedResult && (
+                <div className="bg-muted p-3 rounded-lg text-sm mb-4">
+                  <p className="font-semibold">Context:</p>
+                  <p className="text-muted-foreground line-clamp-2">{selectedResult.title}</p>
+                </div>
+              )}
               {messages.map((message, index) => (
                 <div
                   key={index}
