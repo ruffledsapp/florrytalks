@@ -1,6 +1,7 @@
 import { useState } from "react";
 import SearchBar from "@/components/SearchBar";
 import ChatWindow from "@/components/ChatWindow";
+import Footer from "@/components/Footer";
 
 interface Message {
   content: string;
@@ -32,7 +33,9 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-to-b from-white to-secondary/20">
       <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">FlorryCo</h1>
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-4">
+            FlorryCo
+          </h1>
           <p className="text-lg text-gray-600">
             Explore and chat with AI-powered insights
           </p>
@@ -40,6 +43,7 @@ const Index = () => {
         <SearchBar onSearch={handleSearch} />
         <ChatWindow messages={messages} isLoading={isLoading} />
       </div>
+      <Footer />
     </div>
   );
 };
