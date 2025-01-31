@@ -1,11 +1,44 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from "react";
+import SearchBar from "@/components/SearchBar";
+import ChatWindow from "@/components/ChatWindow";
+
+interface Message {
+  content: string;
+  isAI: boolean;
+}
 
 const Index = () => {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSearch = async (query: string) => {
+    setIsLoading(true);
+    setMessages((prev) => [...prev, { content: query, isAI: false }]);
+    
+    // Temporary response for demonstration
+    setTimeout(() => {
+      setMessages((prev) => [
+        ...prev,
+        {
+          content: "I understand you're asking about " + query + ". Let me help you with that.",
+          isAI: true,
+        },
+      ]);
+      setIsLoading(false);
+    }, 1000);
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
+    <div className="min-h-screen bg-gradient-to-b from-white to-secondary/20">
+      <div className="container mx-auto px-4 py-16">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">FlorryCo</h1>
+          <p className="text-lg text-gray-600">
+            Explore and chat with AI-powered insights
+          </p>
+        </div>
+        <SearchBar onSearch={handleSearch} />
+        <ChatWindow messages={messages} isLoading={isLoading} />
       </div>
     </div>
   );
