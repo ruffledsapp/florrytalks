@@ -15,6 +15,7 @@ interface SearchResult {
 const Index = () => {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedResult, setSelectedResult] = useState<SearchResult | null>(null);
 
   const handleSearch = async (query: string) => {
     setIsLoading(true);
@@ -74,6 +75,11 @@ const Index = () => {
     }
   };
 
+  const handleResultSelect = (result: SearchResult) => {
+    setSelectedResult(result);
+    console.log('Selected result:', result);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-secondary/20">
       <div className="container mx-auto px-4 py-16">
@@ -90,9 +96,13 @@ const Index = () => {
           </p>
         </motion.div>
         <SearchBar onSearch={handleSearch} />
-        <SearchResults results={results} isLoading={isLoading} />
+        <SearchResults 
+          results={results} 
+          isLoading={isLoading} 
+          onResultSelect={handleResultSelect}
+        />
       </div>
-      <ChatWindow />
+      <ChatWindow selectedResult={selectedResult} />
     </div>
   );
 };
