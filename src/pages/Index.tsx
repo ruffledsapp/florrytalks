@@ -46,28 +46,11 @@ const Index = () => {
         throw new Error('Invalid response format from search function');
       }
 
-      // Parse and format the results with validation
-      const formattedResults = response.choices[0].message.content
-        .split('\n')
-        .filter(line => line.includes(':'))
-        .map((result: string) => {
-          const colonIndex = result.indexOf(':');
-          const title = result.substring(0, colonIndex).trim();
-          const content = result.substring(colonIndex + 1).trim();
-          
-          // Additional validation
-          if (!title || !content || title.length < 2 || content.length < 5) {
-            console.warn('Skipping invalid result:', { title, content });
-            return null;
-          }
-          
-          return { title, content };
-        })
-        .filter((result): result is SearchResult => result !== null);
+      // The content is now an array of pre-validated results
+      const formattedResults = response.choices[0].message.content;
+      console.log('Received formatted results:', formattedResults);
 
-      console.log('Formatted search results:', formattedResults);
-
-      // Log the search in our database
+      // Log the search
       const { error: insertError } = await supabase
         .from('search_logs')
         .insert({

@@ -7,7 +7,6 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -35,7 +34,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are a helpful assistant. Return search results in a clear format. Each result should follow this exact format: "Title: Content". Start each result on a new line. Keep titles concise and content informative.'
+            content: 'You are a search assistant. Format your responses as a list of results. Each result MUST follow this EXACT format:\nTitle: [A clear, concise title]\nContent: [Detailed, informative content]\n\nEach result MUST be separated by a newline. Every result MUST have both a Title and Content field.'
           },
           {
             role: 'user',
@@ -43,7 +42,7 @@ serve(async (req) => {
           }
         ],
         max_tokens: 1000,
-        temperature: 0.7, // Slightly increased for more creative responses
+        temperature: 0.7,
       }),
     });
 
@@ -57,16 +56,31 @@ serve(async (req) => {
     const data = await response.json();
     console.log('Raw API response:', data);
 
-    // Validate and clean the response
+    // Enhanced validation and processing
     if (!data.choices?.[0]?.message?.content) {
       throw new Error('Invalid response format from Perplexity API');
     }
 
-    // Pre-process the results to ensure consistent formatting
-    const cleanedContent = data.choices[0].message.content
-      .split('\n')
-      .filter(line => line.includes(':'))
-      .join('\n');
+    // Process and validate each result
+    const results = data.choices[0].message.content
+      .split('\n\n')
+      .map(block => {
+        const titleMatch = block.match(/Title:\s*(.+)/);
+        const contentMatch = block.match(/Content:\s*(.+)/);
+        
+        if (!titleMatch || !contentMatch) {
+          console.warn('Skipping malformed result block:', block);
+          return null;
+        }
+
+        return {
+          title: titleMatch[1].trim(),
+          content: contentMatch[1].trim()
+        };
+      })
+      .filter(result => result !== null);
+
+    console.log('Processed results:', results);
 
     const processedData = {
       ...data,
@@ -74,12 +88,10 @@ serve(async (req) => {
         ...data.choices[0],
         message: {
           ...data.choices[0].message,
-          content: cleanedContent
+          content: results
         }
       }]
     };
-
-    console.log('Processed response:', processedData);
 
     return new Response(JSON.stringify(processedData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
