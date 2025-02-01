@@ -1,16 +1,16 @@
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "sonner";
+import { motion } from "framer-motion";
 import SearchBar from "@/components/SearchBar";
 import SearchResults from "@/components/SearchResults";
 import ChatWindow from "@/components/ChatWindow";
+import AuthenticationLayer from "@/components/auth/AuthenticationLayer";
+import Footer from "@/components/layout/Footer";
+import { useAuth } from "@/components/AuthProvider";
+import type { SearchResult } from "@/types/search";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import LoadingIndicator from "@/components/LoadingIndicator";
 import { processSearchResults, validateQuery } from "@/utils/searchUtils";
-import type { SearchResult } from "@/types/search";
-import { useAuth } from "@/components/AuthProvider";
-import { Icons } from "@/assets/icons";
-import { Images } from "@/assets/images";
 
 const Index = () => {
   const { session, isLoading: authLoading } = useAuth();
@@ -89,29 +89,6 @@ const Index = () => {
     console.log('Selected result:', result);
   };
 
-  const handleSignIn = async () => {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({ 
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin
-        }
-      });
-      
-      if (error) {
-        console.error('Sign in error:', error);
-        if (error.message.includes('Provider not supported')) {
-          toast.error('Google sign-in is not configured. Please contact support.');
-        } else {
-          toast.error('Failed to sign in. Please try again.');
-        }
-      }
-    } catch (error) {
-      console.error('Authentication error:', error);
-      toast.error('An unexpected error occurred. Please try again.');
-    }
-  };
-
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -146,47 +123,53 @@ const Index = () => {
           transition={{ duration: 0.5 }}
           className="text-center mb-12"
         >
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-4">
+          <h1 className="text-5xl font-handwritten font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-4">
             FlurryTalks
           </h1>
-          <p className="text-lg text-gray-600">
+          <p className="text-lg text-gray-600 font-handwritten">
             Explore and discover with AI-powered insights
           </p>
         </motion.div>
 
-        <SearchBar onSearch={handleSearch} />
+        <AuthenticationLayer />
 
-        <AnimatePresence mode="wait">
-          {isLoading ? (
-            <motion.div
-              key="loading"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="mt-8"
-            >
-              <LoadingIndicator />
-            </motion.div>
-          ) : error ? (
-            <motion.div
-              key="error"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="mt-8 text-center text-red-500"
-            >
-              {error}
-            </motion.div>
-          ) : (
-            <SearchResults 
-              results={results} 
-              isLoading={isLoading} 
-              onResultSelect={handleResultSelect}
-            />
-          )}
-        </AnimatePresence>
+        {session && (
+          <>
+            <SearchBar onSearch={handleSearch} />
+            <AnimatePresence mode="wait">
+              {isLoading ? (
+                <motion.div
+                  key="loading"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="mt-8"
+                >
+                  <LoadingIndicator />
+                </motion.div>
+              ) : error ? (
+                <motion.div
+                  key="error"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="mt-8 text-center text-red-500"
+                >
+                  {error}
+                </motion.div>
+              ) : (
+                <SearchResults 
+                  results={results} 
+                  isLoading={isLoading} 
+                  onResultSelect={handleResultSelect}
+                />
+              )}
+            </AnimatePresence>
+            <ChatWindow selectedResult={selectedResult} />
+          </>
+        )}
       </div>
-      <ChatWindow selectedResult={selectedResult} />
+      <Footer />
     </div>
   );
 };

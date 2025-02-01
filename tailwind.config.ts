@@ -20,6 +20,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
+        handwritten: ['Indie Flower', 'cursive'],
       },
       colors: {
         border: "hsl(var(--border))",
