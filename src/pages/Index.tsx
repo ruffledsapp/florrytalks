@@ -9,6 +9,7 @@ import LoadingIndicator from "@/components/LoadingIndicator";
 import { processSearchResults, validateQuery } from "@/utils/searchUtils";
 import type { SearchResult } from "@/types/search";
 import { useAuth } from "@/components/AuthProvider";
+import { Icons } from "@/assets/icons";
 
 const Index = () => {
   const { session, isLoading: authLoading } = useAuth();
@@ -53,7 +54,6 @@ const Index = () => {
       const processedResults = processSearchResults(response);
       console.log('Processed results:', processedResults);
 
-      // Log the search with user_id
       const { error: insertError } = await supabase
         .from('search_logs')
         .insert({
@@ -99,13 +99,18 @@ const Index = () => {
   if (!session) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center space-y-4">
           <h1 className="text-2xl font-bold mb-4">Please Sign In</h1>
           <button
-            onClick={() => supabase.auth.signIn({ provider: 'google' })}
+            onClick={() => supabase.auth.signInWithOAuth({ 
+              provider: 'google',
+              options: {
+                redirectTo: window.location.origin
+              }
+            })}
             className="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary/90 transition-colors"
           >
-            Sign In
+            Sign In with Google
           </button>
         </div>
       </div>

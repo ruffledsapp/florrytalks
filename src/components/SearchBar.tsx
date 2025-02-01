@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search } from "lucide-react";
+import { Icons } from "@/assets/icons";
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
@@ -24,12 +24,14 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Ask anything..."
           className="w-full px-6 py-4 text-lg rounded-full border border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+          aria-label="Search input"
         />
         <button
           type="submit"
           className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full hover:bg-gray-100 transition-colors"
+          aria-label="Submit search"
         >
-          <Search className="w-6 h-6 text-gray-500" />
+          <Icons.Search className="w-6 h-6 text-gray-500" />
         </button>
       </div>
     </form>
