@@ -88,6 +88,29 @@ const Index = () => {
     console.log('Selected result:', result);
   };
 
+  const handleSignIn = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({ 
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin
+        }
+      });
+      
+      if (error) {
+        console.error('Sign in error:', error);
+        if (error.message.includes('Provider not supported')) {
+          toast.error('Google sign-in is not configured. Please contact support.');
+        } else {
+          toast.error('Failed to sign in. Please try again.');
+        }
+      }
+    } catch (error) {
+      console.error('Authentication error:', error);
+      toast.error('An unexpected error occurred. Please try again.');
+    }
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -102,14 +125,10 @@ const Index = () => {
         <div className="text-center space-y-4">
           <h1 className="text-2xl font-bold mb-4">Please Sign In</h1>
           <button
-            onClick={() => supabase.auth.signInWithOAuth({ 
-              provider: 'google',
-              options: {
-                redirectTo: window.location.origin
-              }
-            })}
-            className="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary/90 transition-colors"
+            onClick={handleSignIn}
+            className="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 mx-auto"
           >
+            <Icons.MessageSquare className="w-5 h-5" />
             Sign In with Google
           </button>
         </div>
