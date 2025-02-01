@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import SearchBar from "@/components/SearchBar";
 import SearchResults from "@/components/SearchResults";
 import ChatWindow from "@/components/ChatWindow";
@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import LoadingIndicator from "@/components/LoadingIndicator";
 import { processSearchResults, validateQuery } from "@/utils/searchUtils";
+import { Icons } from "@/assets/icons";
 
 const Index = () => {
   const { session, isLoading: authLoading } = useAuth();
@@ -98,20 +99,7 @@ const Index = () => {
   }
 
   if (!session) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <h1 className="text-2xl font-bold mb-4">Welcome to FlurryTalks</h1>
-          <button
-            onClick={handleSignIn}
-            className="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 mx-auto"
-          >
-            <Icons.User className="w-5 h-5" />
-            Sign In with Google
-          </button>
-        </div>
-      </div>
-    );
+    return <AuthenticationLayer />;
   }
 
   return (
