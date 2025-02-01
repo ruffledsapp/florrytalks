@@ -1,4 +1,4 @@
-import { MessageSquare, Search, Send, X, ChevronDown, ChevronUp, Heart } from "lucide-react";
+import { MessageSquare, Search, Send, X, ChevronDown, ChevronUp, Heart, User, Github } from "lucide-react";
 
 export const Icons = {
   MessageSquare,
@@ -7,7 +7,9 @@ export const Icons = {
   X,
   ChevronDown,
   ChevronUp,
-  Heart
+  Heart,
+  User,
+  Github
 };
 
 export type IconKeys = keyof typeof Icons;

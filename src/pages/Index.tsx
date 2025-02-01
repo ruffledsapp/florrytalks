@@ -10,6 +10,7 @@ import { processSearchResults, validateQuery } from "@/utils/searchUtils";
 import type { SearchResult } from "@/types/search";
 import { useAuth } from "@/components/AuthProvider";
 import { Icons } from "@/assets/icons";
+import { Images } from "@/assets/images";
 
 const Index = () => {
   const { session, isLoading: authLoading } = useAuth();
@@ -123,12 +124,12 @@ const Index = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-4">
-          <h1 className="text-2xl font-bold mb-4">Please Sign In</h1>
+          <h1 className="text-2xl font-bold mb-4">Welcome to FlurryTalks</h1>
           <button
             onClick={handleSignIn}
             className="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 mx-auto"
           >
-            <Icons.MessageSquare className="w-5 h-5" />
+            <Icons.User className="w-5 h-5" />
             Sign In with Google
           </button>
         </div>
@@ -146,7 +147,7 @@ const Index = () => {
           className="text-center mb-12"
         >
           <h1 className="text-5xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-4">
-            FlorryCo
+            FlurryTalks
           </h1>
           <p className="text-lg text-gray-600">
             Explore and discover with AI-powered insights
